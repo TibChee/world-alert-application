@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>World Alert - Checks</title>
+  <script src="app.js" defer></script>
+  <script defer>
+    const results = [];
+    let failures = 0;
+
+    function check(name, passed) {
+      results.push(`${passed ? "PASS" : "FAIL"}: ${name}`);
+      if (!passed) failures += 1;
+      document.getElementById("results").textContent = results.join("\n");
+    }
+
+    function runLogicChecks() {
+      const { matchesRule, processEvent } = window.WorldAlert;
+      const event = {
+        category: "markets",
+        title: "Central bank updates rates",
+        text: "The decision was announced this morning."
+      };
+      const rule = { id: 1, category: "markets", keyword: "", channels: ["email"] };
+
+      check("category match with no keyword", matchesRule(rule, event));
+      check("category mismatch does not match", !matchesRule({ ...rule, category: "breaking-news" }, event));
+      check("trimmed, case-insensitive keyword matches title", matchesRule({ ...rule, keyword: "  RATES " }, event));
+      check("keyword matches event details", matchesRule({ ...rule, keyword: "announced" }, event));
+      check("non-matching keyword is rejected", !matchesRule({ ...rule, keyword: "earthquake" }, event));
+
+      const previews = processEvent([{ ...rule, channels: ["email", "slack"] }], event);
+      check("both selected channels create one preview each", previews.length === 2);
+      check("preview channels are Email and Slack", previews.map((item) => item.channel).join(",") === "Email,Slack");
+      check("all previews clearly say they were not sent", previews.every((item) => item.status === "Simulated - not sent"));
+      check("non-matching event creates no previews", processEvent([rule], { ...event, category: "other" }).length === 0);
+
+      const frame = document.getElementById("app-frame");
+      frame.addEventListener("load", runUiChecks, { once: true });
+      frame.src = "./index.html";
+    }
+
+    function runUiChecks() {
+      const doc = document.getElementById("app-frame").contentDocument;
+      const ruleForm = doc.getElementById("rule-form");
+      doc.getElementById("rule-category").value = "markets";
+      doc.getElementById("rule-keyword").value = "rates";
+      ruleForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      check("UI creates and displays an alert rule", doc.getElementById("rule-list").textContent.includes("Markets - rates"));
+
+      doc.getElementById("event-category").value = "markets";
+      doc.getElementById("event-title").value = "Rates decision";
+      doc.getElementById("event-text").value = "A central bank announces rates.";
+      doc.getElementById("event-form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      const adminText = doc.getElementById("admin-events").textContent;
+      check("UI matching event appears in the admin view", adminText.includes("Rates decision"));
+      check("admin view contains simulated Email and Slack outcomes", adminText.includes("Email") && adminText.includes("Slack") && adminText.includes("Simulated - not sent"));
+
+      doc.getElementById("event-category").value = "other";
+      doc.getElementById("event-title").value = "Unrelated event";
+      doc.getElementById("event-text").value = "No matching alert.";
+      doc.getElementById("event-form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      check("non-matching UI event is recorded without notifications", doc.getElementById("admin-events").textContent.includes("No matching alerts; no notifications were generated."));
+
+      const eventCount = doc.querySelectorAll("#admin-events .event-card").length;
+      doc.getElementById("event-title").value = "   ";
+      doc.getElementById("event-text").value = "   ";
+      doc.getElementById("event-form").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      check("UI rejects whitespace-only event title and details", doc.querySelectorAll("#admin-events .event-card").length === eventCount && doc.getElementById("event-feedback").textContent.includes("Enter both"));
+
+      doc.querySelectorAll('input[name="channel"]').forEach((input) => { input.checked = false; });
+      ruleForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      check("UI rejects a rule with no selected channel", doc.getElementById("rule-feedback").textContent.includes("Select at least one"));
+
+      document.body.dataset.result = failures === 0 ? "passed" : "failed";
+      document.getElementById("summary").textContent = `${results.length - failures}/${results.length} checks passed`;
+      document.getElementById("results").textContent = results.join("\n");
+    }
+
+    document.addEventListener("DOMContentLoaded", runLogicChecks);
+  </script>
+</head>
+<body>
+  <h1>World Alert acceptance checks</h1>
+  <p id="summary">Running checks...</p>
+  <pre id="results"></pre>
+  <iframe id="app-frame" title="Application under test" hidden></iframe>
+</body>
+</html>

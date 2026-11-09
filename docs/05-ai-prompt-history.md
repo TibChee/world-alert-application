@@ -27,4 +27,11 @@ Prompt #2 - user selection: \
 User selected: Local simulated previews
 
 Prompt #3 - set new time constraint: \
-Reduce time budget to four-hour
+Reduce time budget to four hours, including planning, implementation, testing, documentation, and Git commits. Keep Must Have/Nice to Have/Out of Scope separate, prioritize the rule-matching-simulated-notification-admin vertical slice, simplify the architecture, reserve time for critical AI review, tests and docs, and do not implement before approval.
+
+Prompt #4 - plan approval and implementation authorization: \
+The revised plan was approved with the instruction to begin implementation in the same response. No additional AI agents, external AI services, or code-generation packages were used.
+
+## Critical review record
+
+During review of the initial implementation, the required HTML fields were found to accept whitespace-only text when the submit handler was invoked directly. The handler was tightened to reject blank-after-trimming title/details, and a browser test was added. The simulated delivery status and manual-only event source were also checked against the plan to ensure the UI does not imply live monitoring or external sends.

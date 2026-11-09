@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A local demo of world-event alert matching with simulated notifications.">
+  <title>World Alert - Local Demo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, sans-serif;
+      color: #17212b;
+      background: #f3f6f8;
+      font-synthesis: none;
+      line-height: 1.5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body { margin: 0; }
+
+    header {
+      padding: 1.5rem max(1rem, calc((100% - 68rem) / 2));
+      color: #fff;
+      background: #12344a;
+    }
+
+    header p { margin: 0.25rem 0 0; color: #d3e2ec; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { margin: 0; font-size: 1.8rem; }
+    h2 { margin-top: 0; font-size: 1.25rem; }
+    main { max-width: 70rem; margin: 1.5rem auto; padding: 0 1rem 2rem; }
+    .notice { padding: 0.85rem 1rem; border-left: 4px solid #d18b16; background: #fff8e8; }
+    .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
+    section { margin-top: 1rem; padding: 1.25rem; border: 1px solid #d8e0e6; border-radius: 0.5rem; background: #fff; }
+    label { display: block; margin: 0.8rem 0 0.25rem; font-weight: 650; }
+    input, select, textarea, button { font: inherit; }
+    input[type="text"], select, textarea {
+      width: 100%;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid #9aabb7;
+      border-radius: 0.25rem;
+      background: #fff;
+    }
+    textarea { min-height: 5rem; resize: vertical; }
+    fieldset { margin: 1rem 0; padding: 0.5rem 0.8rem 0.8rem; border: 1px solid #d8e0e6; border-radius: 0.25rem; }
+    legend { padding: 0 0.25rem; font-weight: 650; }
+    .channel-choice { display: inline-flex; gap: 0.4rem; align-items: center; margin: 0.25rem 1rem 0 0; }
+    .channel-choice input { margin: 0; }
+    button { padding: 0.55rem 0.9rem; border: 0; border-radius: 0.3rem; color: #fff; background: #075d79; cursor: pointer; }
+    button:hover { background: #064a60; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #f1b94c; outline-offset: 2px; }
+    .feedback { min-height: 1.5rem; margin: 0.65rem 0 0; color: #314957; }
+    .rule-list, .event-list { display: grid; gap: 0.75rem; }
+    .rule-card, .event-card { padding: 0.85rem; border: 1px solid #d8e0e6; border-radius: 0.35rem; background: #fbfcfd; }
+    .rule-card h3, .event-card h3 { margin: 0 0 0.4rem; font-size: 1rem; }
+    .rule-card p, .event-card p { margin: 0.25rem 0; overflow-wrap: anywhere; }
+    .delivery-list { margin: 0.6rem 0 0; padding-left: 1.25rem; }
+    .delivery-list li + li { margin-top: 0.6rem; }
+    .status { display: inline-block; margin-left: 0.25rem; padding: 0.05rem 0.4rem; border-radius: 1rem; color: #174b37; background: #e2f4e8; font-size: 0.85rem; font-weight: 650; }
+    .muted { color: #536875; }
+    footer { max-width: 70rem; margin: 0 auto; padding: 0 1rem 2rem; color: #536875; font-size: 0.9rem; }
+  </style>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>World Alert</h1>
+    <p>A small local demo of user-defined event alerts.</p>
+  </header>
+
+  <main data-world-alert-app>
+    <p class="notice"><strong>Prototype:</strong> Events are entered manually. Email and Slack previews are simulated locally and are not sent.</p>
+
+    <div class="columns">
+      <section aria-labelledby="rule-heading">
+        <h2 id="rule-heading">Create an alert</h2>
+        <form id="rule-form">
+          <label for="rule-category">Event category</label>
+          <select id="rule-category" name="category" required>
+            <option value="breaking-news">Breaking news</option>
+            <option value="markets">Markets</option>
+            <option value="natural-disasters">Natural disasters</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label for="rule-keyword">Keyword (optional)</label>
+          <input id="rule-keyword" name="keyword" type="text" autocomplete="off">
+
+          <fieldset>
+            <legend>Notify via</legend>
+            <label class="channel-choice"><input type="checkbox" name="channel" value="email" checked> Email</label>
+            <label class="channel-choice"><input type="checkbox" name="channel" value="slack" checked> Slack</label>
+          </fieldset>
+
+          <button type="submit">Add alert</button>
+          <p id="rule-feedback" class="feedback" role="status" aria-live="polite"></p>
+        </form>
+
+        <h3>Alert rules</h3>
+        <div id="rule-list" class="rule-list" aria-live="polite">
+          <p class="muted">No alert rules yet.</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="event-heading">
+        <h2 id="event-heading">Submit an event</h2>
+        <form id="event-form">
+          <label for="event-category">Event category</label>
+          <select id="event-category" name="category" required>
+            <option value="breaking-news">Breaking news</option>
+            <option value="markets">Markets</option>
+            <option value="natural-disasters">Natural disasters</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label for="event-title">Title</label>
+          <input id="event-title" name="title" type="text" required>
+
+          <label for="event-text">Event details</label>
+          <textarea id="event-text" name="text" required></textarea>
+
+          <button type="submit">Check alerts</button>
+          <p id="event-feedback" class="feedback" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </div>
+
+    <section aria-labelledby="admin-heading">
+      <h2 id="admin-heading">Admin view</h2>
+      <p class="muted">Read-only event and notification activity for this browser session.</p>
+      <div id="admin-events" class="event-list" aria-live="polite">
+        <p class="muted">No events have been submitted yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Demo state is kept in memory and will reset when this page is reloaded. No live event feeds or external notification services are used.
+  </footer>
+</body>
+</html>
